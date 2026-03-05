@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crew Wars: Amigos de Mierda Tech</title>
+    <style>
+        :root {
+            --video-color: #00ff41;
+            --luces-color: #ff00ff;
+            --sonido-color: #00d4ff;
+            --bg-dark: #0f0f0f;
+            --panel: #1a1a1a;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        /* Pantallas */
+        .screen { display: none; }
+        .active { display: block; }
+
+        h1 { font-size: 1.5rem; margin-bottom: 30px; letter-spacing: 2px; }
+        
+        /* Botones de Selección */
+        .menu-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .btn-sector {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: 2px solid;
+            background: transparent;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+
+        .btn-video { color: var(--video-color); border-color: var(--video-color); }
+        .btn-luces { color: var(--luces-color); border-color: var(--luces-color); }
+        .btn-sonido { color: var(--sonido-color); border-color: var(--sonido-color); }
+
+        .btn-sector:active { transform: scale(0.95); background: white; color: black; }
+
+        /* Pantalla de Juego */
+        #display-sector-title { text-transform: uppercase; font-size: 0.8rem; margin-bottom: 10px; }
+        #question-text {
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            background: white;
+            color: black;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .back-btn {
+            background: transparent;
+            color: #666;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.8rem;
+        }
+
+        .footer { margin-top: 20px; font-size: 0.6rem; color: #444; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="home-screen" class="screen active">
+            <h1>AMIGOS DE MIERDA<br><span style="font-size: 0.7rem; color: #666;">TECH CREW EDITION</span></h1>
+            <p style="font-size: 0.8rem; margin-bottom: 20px;">ELIGE TU DEPARTAMENTO:</p>
+            <div class="menu-grid">
+                <button class="btn-sector btn-video" onclick="startGame('video')">VÍDEO</button>
+                <button class="btn-sector btn-luces" onclick="startGame('luces')">LUCES</button>
+                <button class="btn-sector btn-sonido" onclick="startGame('sonido')">SONIDO</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <div id="display-sector-title"></div>
+            <div id="question-text">Preparando el patch...</div>
+            <button class="main-btn" onclick="nextQuestion()">Siguiente Pregunta</button>
+            <button class="back-btn" onclick="goHome()">Volver al Inicio (Reset)</button>
+        </div>
+
+        <div class="footer">STAY PATCHED | V.3.0</div>
+    </div>
+
+    <script>
+        let currentSector = '';
+        const questions = {
+            video: [
+                "¿Quién es más probable que conecte un cable de alimentación al revés?",
+                "¿Quién llegaría más tarde a un montaje de las 6:00 AM?",
+                "¿Quién se queja más de que los módulos LED no están calibrados?",
+                "¿Quién es capaz de quedarse dormido encima de un flightcase durante el show?",
+                "¿Quién se llevaría por error la herramienta de un compañero al final de la gira?",
+                "¿Quién entraría en pánico si falla el procesador principal a 5 minutos de empezar?",
+                "¿Quién es el que más 'chapuzas' hace con cinta aislante para salir del paso?",
+                "¿Quién se cree que sabe más que el jefe de sistemas pero no tiene ni idea?",
+                "¿Quién se marcharía a casa sin recoger los cables del suelo?",
+                "¿Quién es el que siempre tiene hambre en medio del montaje?",
+                "¿Quién rompería un módulo de la pantalla por ir con demasiadas prisas?",
+                "¿Quién es más probable que ignore las medidas de seguridad por pereza?",
+                "¿Quién se pasa todo el bolo mirando el móvil en lugar de la pantalla?",
+                "¿Quién se llevaría el crédito de un montaje que no ha hecho?",
+                "¿Quién es el que siempre pierde su llave Allen o su Leatherman?",
+                "¿Quién se pone más agresivo cuando un píxel se queda en color verde fijo?",
+                "¿Quién es el que menos se ducha durante una semana de festival?",
+                "¿Quién daría el 'ok' a una estructura que está visiblemente torcida?",
+                "¿Quién es el que más pelotea al director técnico?",
+                "¿Quién se equivocaría con el mapeo de la pantalla después de horas configurando?",
+                "¿Quién intentaría ligar con alguien del catering en lugar de trabajar?",
+                "¿Quién es el que siempre tiene una excusa para no cargar los camiones?",
+                "¿Quién es más probable que aparezca con resaca a un desmontaje nocturno?",
+                "¿Quién se pasaría todo el día quejándose del peso de los cabinets?",
+                "¿Quién es el que más 'posturea' en Instagram con fotos del escenario?",
+                "¿Quién no sabe diferenciar un cable SDI de un cable de antena?",
+                "¿Quién es el más 'gafe' y siempre le pasa algo al equipo que toca?",
+                "¿Quién se gastaría todo el per diem en cerveza la primera noche?",
+                "¿Quién es capaz de dejar caer un motor por no revisar el bulón?",
+                "¿Quién es el que menos trabaja pero el que más ruido hace al mover cajas?",
+                "¿Quién se perdería buscando el acceso al escenario en un recinto conocido?",
+                "¿Quién es el más tacaño a la hora de invitar a una ronda tras el show?",
+                "¿Quién se pondría a discutir con el de luces por el espacio en el control?",
+                "¿Quién es más probable que reciba una descarga por manipular algo en tensión?",
+                "¿Quién tiene la caja de herramientas más desordenada y sucia?",
+                "¿Quién se cree un 'VJ' estrella por darle al 'play' en Resolume?",
+                "¿Quién es el que siempre pide que le sujeten la escalera?",
+                "¿Quién sería el primero en ser despedido si hubiera recortes?",
+                "¿Quién se queja del catering aunque sea comida de tres estrellas?",
+                "¿Quién es el que más tarda en ponerse los EPIs?",
+                "¿Quién se olvidaría de cargar las baterías del intercom?",
+                "¿Quién montaría una pantalla entera para darse cuenta de que está al revés?",
+                "¿Quién es el que siempre está 'en el baño' cuando hay que cargar?",
+                "¿Quién borraría por error todo el show del servidor sin tener copia?",
+                "¿Quién presume de años de experiencia pero no sabe qué es un refresco?",
+                "¿Quién se quedaría encerrado dentro de un camión por despiste?",
+                "¿Quién se guarda las pilas nuevas de la empresa en su mochila?",
+                "¿Quién siempre dice 'en mi otra empresa se hace mejor'?",
+                "¿Quién se asustaría si hay que subir a 10 metros en una plataforma?",
+                "¿Quién es el peor compañero para una gira de un mes?",
+                "¿Quién forzaría un conector Neutrik hasta romperlo?",
+                "¿Quién mira cómo cargan los demás alegando que él 'organiza'?",
+                "¿Quién olvidaría poner los contrapesos en un fly-tower?",
+                "¿Quién se queja de que el de sonido le quita sitio en la manguera?",
+                "¿Quién intentaría piratear el Wi-Fi del recinto durante el bolo?",
+                "¿Quién pierde siempre los tornillos de los módulos?",
+                "¿Quién daría un latigazo con un cable de corriente 'de broma'?",
+                "¿Quién se cree ingeniero por haber montado una pantalla una vez?",
+                "¿Quién deja un cable de señal sin encintar en medio de un pasillo?",
+                "¿Quién dormiría dentro de un flightcase vacío?",
+                "¿Quién pide herramientas prestadas y nunca las devuelve?",
+                "¿Quién dejaría media pantalla en negro por equivocarse de salida?",
+                "¿Quién pasa más tiempo en el catering que en el escenario?",
+                "¿Quién tiraría un truss al suelo por no mirar el motor?",
+                "¿Quién trae la ropa de trabajo más sucia desde el lunes?",
+                "¿Quién limpiaría su coche personal con el aire comprimido?",
+                "¿Quién dice que el equipo está roto porque no sabe conectarlo?",
+                "¿Quién se queja de agujetas tras cargar solo tres maletas?",
+                "¿Quién olvida el arnés en el hotel el día que hay que subir?",
+                "¿Quién critica los videos que trae el cliente como si fuera Spielberg?",
+                "¿Quién se escaquea de recoger los cables de tierra?",
+                "¿Quién tiraría un café sobre la mesa de realización?",
+                "¿Quién discutiría con el regidor delante del cliente?",
+                "¿Quién tiene una historia inventada de una gira mundial?",
+                "¿Quién deja la luz de trabajo encendida durante el show?",
+                "¿Quién se lleva el catering en un tupper al hotel?",
+                "¿Quién rompe las bridas con los dientes?",
+                "¿Quién apunta a los ojos con el láser de medición?",
+                "¿Quién se encierra en el baño justo al empezar el show?",
+                "¿Quién se cree que maneja GrandMA y solo lanza clips?",
+                "¿Quién pierde el pase de seguridad el primer día?",
+                "¿Quién habla por teléfono con su pareja durante el montaje?",
+                "¿Quién monta una estructura con tornillos de distintos tamaños?",
+                "¿Quién propone ir de fiesta cuando hay que montar a las 7 AM?",
+                "¿Quién tarda más en bajar al bus del tour?",
+                "¿Quién se equivoca de camión al cargar?",
+                "¿Quién da lecciones de física sin haber terminado la ESO?",
+                "¿Quién tiene el walkie siempre apagado o sin batería?",
+                "¿Quién busca 'souvenirs' en vez de trabajar?",
+                "¿Quién dejaría la pantalla al 100% de brillo con imagen fija horas?",
+                "¿Quién tiene siempre las manos en los bolsillos?",
+                "¿Quién trastea el patch de video sin avisar?",
+                "¿Quién se caería del escenario por andar hacia atrás?",
+                "¿Quién dice que 'falta equipo' porque no sabe buscarlo?",
+                "¿Quién discute con los locales por no entender su idioma?",
+                "¿Quién se queda siempre con el mejor sitio del control?",
+                "¿Quién olvidaría conectar el cable de datos principal?",
+                "¿Quién se cree el jefe cuando el jefe real se va?",
+                "¿Quién tiene la furgoneta de empresa más desastrosa?",
+                "¿Quién ha dicho más veces la frase 'esto no es mi culpa'?"
+            ],
+            luces: [
+                "¿Quién parchearía mal el universo 4 y no se daría cuenta hasta el show?",
+                "¿Quién subiría el dimmer al 100% cuando el rigger está delante del foco?",
+                "¿Quién pierde siempre el dongle de la GrandMA?",
+                "¿Quién es capaz de enfocar un recorte al revés?",
+                "¿Quién se cree que sabe programar pero solo usa el 'Layout'?",
+                "¿Quién dejaría el haz de luz cegando al cliente en el discurso?",
+                "¿Quién no sabe qué es un terminador DMX?",
+                "¿Quién se quejaría de que hay demasiado humo pero él mismo le da al botón?",
+                "¿Quién olvidaría apretar la garra de un móvil a 10 metros de altura?",
+                "¿Quién es más probable que use cinta americana para arreglar un cable pelado?",
+                "¿Quién se pondría a limpiar las lentes de los focos con su propia camiseta?",
+                "¿Quién mezclaría fases en el cuadro y quemaría media gira?",
+                "¿Quién tardaría más en encontrar una dirección DMX errónea?",
+                "¿Quién se cree el rey del control por tener 4 pantallas?",
+                "¿Quién no sabe diferenciar un RJ45 de un Ethercon?",
+                "¿Quién dejaría las luces de público encendidas al empezar el show?",
+                "¿Quién es el que siempre dice que el foco está roto cuando está apagado del cuadro?",
+                "¿Quién se llevaría el per diem más rápido en geles de colores?",
+                "¿Quién es capaz de montar un truss boca abajo?",
+                "¿Quién se olvidaría de poner las eslingas de seguridad?",
+                "¿Quién es el que más se queja de que los de video tienen mucho brillo?",
+                "¿Quién dejaría un foco 'haciendo ruidos' sin avisar?",
+                "¿Quién se pondría a programar efectos de arcoíris en un evento corporativo serio?",
+                "¿Quién perdería el rigger remoto a los dos minutos?",
+                "¿Quién es el que siempre tiene los guantes de protección más rotos?",
+                "¿Quién se cree rigger y le da miedo subir a la escalera?",
+                "¿Quién conectaría un foco de 110V a 230V por no mirar?",
+                "¿Quién se queja del reflejo en su pantalla durante todo el día?",
+                "¿Quién es capaz de tirar de un cable que está enganchado hasta romperlo?",
+                "¿Quién se cree que sabe electrónica y abre un móvil en el suelo para nada?",
+                "¿Quién dejaría el control solo para ir a fumar justo en un cambio de escena?",
+                "¿Quién parchearía 50 focos a mano en lugar de usar el archivo de librería?",
+                "¿Quién es el que siempre dice 'eso en el 3D se veía bien'?",
+                "¿Quién se quejaría de que el follow-spot no le hace caso?",
+                "¿Quién es más probable que se electrocute por tocar un cable de lámpara?",
+                "¿Quién tiene el maletín de geles más desordenado del mundo?",
+                "¿Quién se cree VJ por usar un Media Server?",
+                "¿Quién es el que siempre pide que le bajen el puente porque 'se ha olvidado un foco'?",
+                "¿Quién sería el primero en quejarse de que el aire acondicionado le da directo?",
+                "¿Quién se pondría a discutir con el de sonido por el ruido de los ventiladores?",
+                "¿Quién olvidaría cargar las baterías del tester DMX?",
+                "¿Quién montaría los motores al revés (cadena arriba)?",
+                "¿Quién es el que siempre dice 'no hay suficiente potencia'?",
+                "¿Quién se pondría a tocar la mesa de luces de otro sin permiso?",
+                "¿Quién presume de saber de Art-Net y no sabe poner una IP?",
+                "¿Quién se quedaría dormido con la cabeza apoyada en la mesa?",
+                "¿Quién se guarda los conectores SOCAPEX nuevos en casa?",
+                "¿Quién siempre dice que 'la luz blanca es lo más difícil'?",
+                "¿Quién se asustaría si un foco hace un reset ruidoso?",
+                "¿Quién es el que más tarda en recoger los multihilos?",
+                "¿Quién se cargaría una lámpara por tocarla con los dedos?",
+                "¿Quién se queja de que no hay suficiente espacio en el control?",
+                "¿Quién dejaría el estrobo puesto al final del show por error?",
+                "¿Quién se cree iluminador por usar el botón 'Select All'?",
+                "¿Quién olvidaría poner el bulón de seguridad en un elevador?",
+                "¿Quién se pasa el día mirando las fotos de su diseño en el visor?",
+                "¿Quién daría un calambrazo a alguien con un cebador?",
+                "¿Quién se cree que sabe de redes y bloquea toda la red de luces?",
+                "¿Quién deja los cables colgando del truss sin bridas?",
+                "¿Quién dormiría en el hueco de los flightcases de las cabezas móviles?",
+                "¿Quién pide una Leatherman y la devuelve con la punta rota?",
+                "¿Quién dejaría el blackout puesto y pensaría que la mesa se ha colgado?",
+                "¿Quién pasa más tiempo ajustando su silla que programando?",
+                "¿Quién tiraría una torre de luces por no nivelar las patas?",
+                "¿Quién trae las botas de seguridad más gastadas del sector?",
+                "¿Quién usaría el humo para ocultar que no ha terminado de montar?",
+                "¿Quién dice que el foco no funciona y es que tiene el dimmer bajado?",
+                "¿Quién se queja del peso de un VL3500?",
+                "¿Quién olvida quitar las tapas de los focos antes de encender?",
+                "¿Quién critica el color de la pantalla de video constantemente?",
+                "¿Quién se escaquea de enrollar mangueras de 32A?",
+                "¿Quién tiraría un refresco sobre la GrandMA?",
+                "¿Quién discutiría con el jefe de producción por un foco?",
+                "¿Quién tiene una historia sobre cómo salvó un festival él solo?",
+                "¿Quién deja la luz de lectura encendida todo el bolo?",
+                "¿Quién se lleva las bombillas de repuesto como recuerdo?",
+                "¿Quién corta las bridas dejando el borde afilado?",
+                "¿Quién juega con el puntero láser en la calva del de delante?",
+                "¿Quién se esconde detrás del rack de dimers para no trabajar?",
+                "¿Quién se cree el sucesor de Patrick Woodroffe?",
+                "¿Quién pierde el pin de seguridad del truss?",
+                "¿Quién habla por el intercom sobre qué va a cenar?",
+                "¿Quién monta un puente con piezas de diferentes marcas?",
+                "¿Quién propone ir al bar cuando falta por parchear media sala?",
+                "¿Quién tarda más en encontrar su maleta en el camión?",
+                "¿Quién se equivoca de fase al conectar el cuadro?",
+                "¿Quién da lecciones sobre Kelvin y lúmenes sin saber qué es un vatio?",
+                "¿Quién tiene el intercom siempre al volumen máximo molestando?",
+                "¿Quién busca focos 'vintage' para robárselos?",
+                "¿Quién dejaría un seguidor encendido apuntando al suelo quemando la moqueta?",
+                "¿Quién tiene siempre las manos manchadas de grasa de motor?",
+                "¿Quién cambia el patch del show 5 minutos antes de empezar?",
+                "¿Quién se caería de la escalera por no usar estabilizadores?",
+                "¿Quién dice que el rigger no sabe cuando él no sabe leer un plano?",
+                "¿Quién discute con los locales sobre cómo se enrolla un cable?",
+                "¿Quién se apropia de la mejor pantalla del control?",
+                "¿Quién olvidaría conectar el cable de datos del primer foco de la línea?",
+                "¿Quién se cree el jefe de luces solo por tener un chaleco con bolsillos?",
+                "¿Quién tiene el flightcase de cables más caótico?",
+                "¿Quién ha dicho más veces 'eso lo arreglo en el siguiente Cue'?"
+            ],
+            sonido: [
+                "¿Quién dejaría que acople el micro del regidor solo para reírse?",
+                "¿Quién se cree que sabe ecualizar y solo sube los graves?",
+                "¿Quién olvidaría mutear el micro del cura en una boda?",
+                "¿Quién es más probable que pierda un adaptador de Jack a Mini-jack?",
+                "¿Quién dice que el sonido está 'limpio' cuando hay un zumbido de fondo?",
+                "¿Quién pondría el PA al máximo solo para despertar a los de luces?",
+                "¿Quién no sabe diferenciar un cable simétrico de uno asimétrico?",
+                "¿Quién se quejaría de que el batería pega muy fuerte pero él le sube el gain?",
+                "¿Quién olvidaría poner pilas nuevas a los inalámbricos?",
+                "¿Quién es más probable que use un SM58 para clavar un clavo?",
+                "¿Quién se pondría a limpiar la mesa de sonido con un trapo húmedo?",
+                "¿Quién conectaría el Phantom Power a un micro de cinta y lo quemaría?",
+                "¿Quién tardaría más en encontrar qué cable de la manguera está roto?",
+                "¿Quién se cree el mejor técnico por usar una mesa digital de 200 canales?",
+                "¿Quién no sabe diferenciar un XLR de un DMX (aunque lo ponga)?",
+                "¿Quién dejaría el Talkback abierto y se le oiría insultar al artista?",
+                "¿Quién es el que siempre dice que el altavoz está roto cuando está en mute?",
+                "¿Quién se gastaría el per diem en cascos nuevos cada mes?",
+                "¿Quién es capaz de montar un line-array torcido?",
+                "¿Quién se olvidaría de poner los pines de seguridad de las cajas?",
+                "¿Quién se queja más de que el generador hace ruido?",
+                "¿Quién dejaría un micro puesto en el borde del escenario para que se caiga?",
+                "¿Quién se pondría a poner efectos de reverb infinita en los avisos de seguridad?",
+                "¿Quién perdería la llave del rack de etapas?",
+                "¿Quién es el que siempre tiene los cables más enredados?",
+                "¿Quién se cree que sabe de RF y solo cambia de canal al azar?",
+                "¿Quién conectaría una salida de potencia a una entrada de línea?",
+                "¿Quién se queja de la acústica de la sala antes de empezar a montar?",
+                "¿Quién es capaz de tirar de un cable de micro que está pisado por un piano?",
+                "¿Quién se cree que sabe de electrónica y corta cables para empalmarlos con los dedos?",
+                "¿Quién dejaría el control solo para ir a comer cuando el artista está probando?",
+                "¿Quién parchearía 32 canales mal en la caja de escenario?",
+                "¿Quién es el que siempre dice 'en mis cascos suena bien'?",
+                "¿Quién se quejaría de que el cantante no sabe usar el micro?",
+                "¿Quién es más probable que se quede sordo por no usar protección?",
+                "¿Quién tiene la maleta de micros más desordenada?",
+                "¿Quién se cree productor musical por mover dos faders?",
+                "¿Quién pide que le sujeten el micro mientras él 'ajusta' algo?",
+                "¿Quién sería el primero en pedir que bajen el volumen de los monitores?",
+                "¿Quién discutiría con el de luces por las interferencias de los dimers?",
+                "¿Quién olvidaría cargar el analizador de espectro?",
+                "¿Quién montaría los subgraves fuera de fase?",
+                "¿Quién es el que siempre dice 'falta presión'?",
+                "¿Quién se pondría a tocar la EQ del master de otro?",
+                "¿Quién presume de saber de Dante y no sabe qué es un switch?",
+                "¿Quién se quedaría dormido con el ruido rosa puesto?",
+                "¿Quién se guarda los conectores Speakon nuevos?",
+                "¿Quién siempre dice que 'lo analógico sonaba mejor'?",
+                "¿Quién se asustaría si suena un 'pop' fuerte en los altavoces?",
+                "¿Quién es el que más tarda en recoger el snake?",
+                "¿Quién se cargaría un micro de condensador por soplarle?",
+                "¿Quién se queja de que el público hace mucho ruido?",
+                "¿Quién dejaría la música de ambiente puesta después de que empiece el show?",
+                "¿Quién se cree que sabe de sonido directo por haber grabado un podcast?",
+                "¿Quién olvidaría poner la toma de tierra en el cuadro de sonido?",
+                "¿Quién se pasa el día mirando el RTA en su iPad?",
+                "¿Quién daría un latigazo con un cable XLR?",
+                "¿Quién se cree que sabe de acústica y pone cartones de huevos?",
+                "¿Quién deja los micros sin pie tirados por el suelo?",
+                "¿Quién dormiría dentro de la funda de la mesa de sonido?",
+                "¿Quién pide un adaptador y lo devuelve lleno de cerveza?",
+                "¿Quién dejaría el gain a tope y se iría al baño?",
+                "¿Quién pasa más tiempo eligiendo la playlist que ajustando el PA?",
+                "¿Quién tiraría una torre de sonido por no poner vientos?",
+                "¿Quién trae los cascos más caros pero no sabe usarlos?",
+                "¿Quién usaría el delay para ocultar que no sabe mezclar?",
+                "¿Quién dice que el micro no funciona y es que no tiene pilas?",
+                "¿Quién se queja del peso de una KS28?",
+                "¿Quién olvida quitar el mute del master antes de empezar?",
+                "¿Quién critica el ruido de los ventiladores de video constantemente?",
+                "¿Quién se escaquea de cargar los racks de etapas?",
+                "¿Quién tiraría una cerveza sobre la DiGiCo?",
+                "¿Quién discutiría con el manager de la banda?",
+                "¿Quién tiene una historia sobre cómo mezcló a los Rolling Stones?",
+                "¿Quién deja el monitor de escucha encendido a todo volumen?",
+                "¿Quién se lleva las espumas de los micros como souvenir?",
+                "¿Quién enrolla los cables de micro alrededor del brazo (mal)?",
+                "¿Quién juega con el generador de tonos para molestar?",
+                "¿Quién se esconde detrás de los subgraves para no trabajar?",
+                "¿Quién se cree el sucesor de Dave Rat?",
+                "¿Quién pierde la tapa del rack de micros?",
+                "¿Quién habla por el Talkback sobre lo que quiere comer?",
+                "¿Quién monta un sistema de PA con cajas de diferentes marcas?",
+                "¿Quién propone ir al bar cuando el sistema aún no suena?",
+                "¿Quién tarda más en encontrar sus guantes?",
+                "¿Quién se equivoca de salida en la matriz?",
+                "¿Quién da lecciones sobre decibelios sin saber multiplicar?",
+                "¿Quién tiene el solo-bus siempre activado sin querer?",
+                "¿Quién busca mesas viejas para decir que son 'vintage'?",
+                "¿Quién dejaría un micro abierto cerca de un altavoz causando feedback?",
+                "¿Quién tiene siempre las manos manchadas de pegamento de cinta?",
+                "¿Quién cambia la configuración de la mesa 1 minuto antes?",
+                "¿Quién se caería de la tarima por no mirar?",
+                "¿Quién dice que el músico no sabe cuando él no sabe el patch?",
+                "¿Quién discute con los locales sobre cómo se pone un micro?",
+                "¿Quién se apropia de la mejor silla del control?",
+                "¿Quién olvidaría conectar la manguera de datos del rack?",
+                "¿Quién se cree el jefe de sonido por llevar un analizador de mano?",
+                "¿Quién tiene el cajón de adaptadores más caótico?",
+                "¿Quién ha dicho más veces 'eso en el show no se va a notar'?"
+            ]
+        };
+
+        function startGame(sector) {
+            currentSector = sector;
+            document.getElementById('home-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            
+            const title = document.getElementById('display-sector-title');
+            title.innerText = "MODO: " + sector;
+            title.style.color = `var(--${sector}-color)`;
+            
+            nextQuestion();
+        }
+
+        function goHome() {
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('home-screen').classList.add('active');
+        }
+
+        function nextQuestion() {
+            const list = questions[currentSector];
+            const display = document.getElementById('question-text');
+            const randomIndex = Math.floor(Math.random() * list.length);
+            
+            // Efecto flash rápido
+            display.style.opacity = 0;
+            setTimeout(() => {
+                display.innerText = list[randomIndex];
+                display.style.opacity = 1;
+            }, 100);
+        }
+    </script>
+
+</body>
+</html>
